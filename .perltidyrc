@@ -15,3 +15,7 @@
 --nospace-for-semicolon          # no space before semicolons in loops
 --nospace-terminal-semicolon     # no space before termonal semicolons
 --notrim-qw                      # Do not mess with qw{} whitespace
+--opening-token-right            # make "push @array, {" indent nicely
+--converge                       # Run until the output stops changing
+--extended-syntax                # For Fennec/Test2 and other Devel::Declare syntax tools
+--no-outdent-labels              # Do not outdent labels
