@@ -1,0 +1,48 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use POSIX qw/:sys_wait_h/;
+use Time::HiRes qw/sleep/;
+use File::Temp qw/tempdir/;
+
+use Test2::Harness::Run;
+use Test2::Harness::Worker;
+
+my $dir = tempdir("T2-Harness-XXXXXXXX", CLEANUP => 1, TMPDIR => 1);
+
+my $run = Test2::Harness::Run->new(
+    id => 1,
+    dir => $dir,
+    job_count => 4,
+    libs => ['./lib'],
+    event_stream => 1,
+    search => ['./t'],
+    env_vars => { AAAA => 1 },
+    preload => ['Scalar::Util'],
+);
+
+$run->save_config;
+
+my $worker = Test2::Harness::Worker->new(
+    run => $run,
+);
+
+$worker->spawn;
+while (!$worker->proc->complete) {
+    local $| = 1;
+    print ".";
+    $worker->proc->wait(WNOHANG);
+    sleep 0.2;
+}
+print "\n";
+$run->save('run.json', pretty => 1);
+
+__END__
+
+
+    $env->{HARNESS_IS_VERBOSE}    = $self->{+VERBOSE} || 0;
+    $env->{T2_HARNESS_IS_VERBOSE} = $self->{+VERBOSE} || 0;
+
+
+
