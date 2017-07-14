@@ -3,7 +3,7 @@ use File::Temp qw/tempfile/;
 
 use ok $CLASS;
 
-my ($wh, $filename) = tempfile("test-$$-XXXXXXXX");
+my ($wh, $filename) = tempfile("test-$$-XXXXXXXX", TMPDIR => 1);
 
 print $wh "line1\nline2\nline3\nline";
 $wh->flush;

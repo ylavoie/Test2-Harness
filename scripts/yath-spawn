@@ -1,0 +1,28 @@
+#!/usr/bin/env perl
+package main;
+use strict;
+use warnings;
+
+use Test2::Harness::Run::Runner;
+
+my ($dir) = @ARGV;
+
+my $spawn = Test2::Harness::Run::Runner->new(
+    dir => $dir,
+);
+
+my $test_file = $spawn->start;
+
+unless($test_file) {
+    my $complete = File::Spec->catfile($dir, 'complete');
+    open(my $fh, '>', $complete) or die "Could not open '$complete'";
+    print $fh '1';
+    close($fh);
+    exit 0;
+}
+
+$@ = '';
+do $test_file;
+die $@ if $@;
+
+exit 0;

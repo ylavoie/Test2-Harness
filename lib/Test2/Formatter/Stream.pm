@@ -2,18 +2,13 @@ package Test2::Formatter::Stream;
 use strict;
 use warnings;
 
+use Carp qw/croak/;
 use Time::HiRes qw/time/;
 
-use Test2::Harness::Util qw/open_file/;
 use Test2::Harness::Util::JSON qw/JSON/;
 
 use base qw/Test2::Formatter/;
-use Test2::Util::HashBase qw/filename io _encoding/;
-
-sub no_header      { 0 }
-sub no_numbers     { 0 }
-sub set_no_header  { 0 }
-sub set_no_numbers { 0 }
+use Test2::Util::HashBase qw/-io _encoding _no_header _no_numbers _no_diag -event_id -tb -tb_handles -file -leader/;
 
 {
     my $J = JSON->new;
@@ -25,18 +20,14 @@ sub set_no_numbers { 0 }
     sub ENCODER() { $J }
 }
 
-my $DEFAULT_FILE;
+my $ROOT_FILE;
 sub import {
     my $class = shift;
+    my %params = @_;
 
     $class->SUPER::import();
 
-    return unless @_;
-
-    die "$class already imported with an argument"
-        if $DEFAULT_FILE && $DEFAULT_FILE ne $_[0];
-
-    $DEFAULT_FILE = shift;
+    $ROOT_FILE = $params{file} if $params{file};
 }
 
 sub hide_buffered { 0 }
@@ -44,27 +35,78 @@ sub hide_buffered { 0 }
 sub init {
     my $self = shift;
 
-    $self->{+FILENAME} ||= $DEFAULT_FILE or die "No file specified";
-    $self->{+IO} ||= open_file($self->{+FILENAME}, '>>');
+    $self->{+EVENT_ID} = 1;
 
-    $self->{+IO}->autoflush(1);
+    if (my $file = $self->{+FILE}) {
+        open(my $fh, '>', $file) or die "Could not open file: $file";
+        $fh->autoflush(1);
+        unshift @{$self->{+IO}} => $fh;
+        $self->{+LEADER} = 0 unless defined $self->{+LEADER};
+    }
+
+    $self->{+LEADER} = 1 unless defined $self->{+LEADER};
+
+    croak "You must specify at least 1 filehandle for output"
+        unless $self->{+IO} && @{$self->{+IO}};
+
+    $_->autoflush(1) for @{$self->{+IO}};
+    STDOUT->autoflush(1);
+    STDERR->autoflush(1);
+
+    if ($INC{'Test2/API.pm'}) {
+        Test2::API::test2_stdout()->autoflush(1);
+        Test2::API::test2_stderr()->autoflush(1);
+    }
+
+    if ($self->{check_tb}) {
+        require Test::Builder::Formatter;
+        $self->{+TB} = Test::Builder::Formatter->new();
+        $self->{+TB_HANDLES} = [@{$self->{+TB}->handles}];
+    }
+}
+
+sub new_root {
+    my $class = shift;
+    my %params = @_;
+
+    require Test2::API;
+    my $io = $params{+IO} = [Test2::API::test2_stdout(), Test2::API::test2_stderr()];
+    $_->autoflush(1) for @$io;
+
+    $params{+FILE} ||= $ENV{T2_STREAM_FILE} || $ROOT_FILE;
+
+    # DO NOT REOPEN THEM!
+    delete $ENV{T2_STREAM_FILE};
+    $ROOT_FILE = undef;
+
+    $params{check_tb} = 1 if $INC{'Test/Builder.pm'};
+
+    return $class->new(%params);
 }
 
 sub record {
     my $self = shift;
-    Carp::confess($self) unless ref($self);
+    my ($id, $facets, $num) = @_;
 
-    my $io = $self->{+IO};
+    my $json;
+    {
+        no warnings 'once';
+        local *UNIVERSAL::TO_JSON = sub { "$_[0]" };
 
-    no warnings 'once';
-    local *UNIVERSAL::TO_JSON = sub { "$_[0]" };
-
-    for my $item (@_) {
-        my $json = ENCODER->encode($item);
-        print $io "$json\n";
+        $json = ENCODER->encode(
+            {
+                stamp        => time,
+                stream_id    => $id,
+                event_id     => "event-$id",
+                facet_data   => $facets,
+                assert_count => $self->{+_NO_NUMBERS} ? undef : $num,
+            }
+        );
     }
 
-    $io->flush;
+    my ($out, @sync) = @{$self->{+IO}};
+    print $out $self->{+LEADER} ? ("T2-HARNESS-EVENT: ", $id, ' ', $json, "\n") : ($json, "\n");
+    print $_ "T2-HARNESS-ESYNC: ", $id, "\n" for @sync;
 }
 
 sub encoding {
@@ -72,14 +114,15 @@ sub encoding {
 
     if (@_) {
         my ($enc) = @_;
-        $self->record({control => {encoding => $enc}});
-        $self->set_encoding($enc);
+        $self->record($self->{+EVENT_ID}++, {control => {encoding => $enc}});
+        $self->_set_encoding($enc);
+        $self->{+TB}->encoding($enc) if $self->{+TB};
     }
 
     return $self->{+_ENCODING};
 }
 
-sub set_encoding {
+sub _set_encoding {
     my $self = shift;
 
     if (@_) {
@@ -89,10 +132,12 @@ sub set_encoding {
         # If utf8 is requested we use ':utf8' instead of ':encoding(utf8)' in
         # order to avoid the thread segfault.
         if ($enc =~ m/^utf-?8$/i) {
-            binmode($self->{+IO}, ":utf8");
+            binmode($self->{+IO}->[0], ":utf8");
+            binmode($self->{+IO}->[1], ":utf8");
         }
         else {
-            binmode($self->{+IO}, ":encoding($enc)");
+            binmode($self->{+IO}->[0], ":encoding($enc)");
+            binmode($self->{+IO}->[1], ":encoding($enc)");
         }
         $self->{+_ENCODING} = $enc;
     }
@@ -102,27 +147,118 @@ sub set_encoding {
 
 if ($^C) {
     no warnings 'redefine';
-    *write = sub {};
+    *write = sub { };
 }
+
 sub write {
     my ($self, $e, $num, $f) = @_;
     $f ||= $e->facet_data;
 
-    $self->set_encoding($f->{control}->{encoding}) if $f->{control}->{encoding};
+    $self->_set_encoding($f->{control}->{encoding}) if $f->{control}->{encoding};
 
-    $self->record(
-        {
-            facets       => $f,
-            assert_count => $num,
-            stamp        => time,
+    # Hide these if we must, but do not remove them for good.
+    local $f->{info} if $self->{+_NO_DIAG};
+    local $f->{plan} if $self->{+_NO_HEADER};
+
+    my $tb_only = 0;
+    if ($self->{+TB}) {
+        $tb_only ||= $self->{+TB_HANDLES}->[0] != $self->{+TB}->{handles}->[0];
+        $tb_only ||= $self->{+TB_HANDLES}->[1] != $self->{+TB}->{handles}->[1];
+
+        my $todo_match = $self->{+TB_HANDLES}->[0] == $self->{+TB}->{handles}->[2]
+            || $self->{+TB_HANDLES}->[1] == $self->{+TB}->{handles}->[2];
+
+        $tb_only ||= !$todo_match;
+
+        if ($tb_only) {
+            $self->{+TB}->write($e, $num, $f) if $self->{+TB} && !$f->{trace}->{buffered};
+            return;
         }
-    );
+    }
+
+    my $id = $self->{+EVENT_ID}++;
+    $self->record($id, $f, $num);
 }
 
-sub DESTROY {
+sub no_header  { $_[0]->{+_NO_HEADER} }
+sub no_diag    { $_[0]->{+_NO_DIAG} }
+sub no_numbers { $_[0]->{+_NO_NUMBERS} }
+
+sub handles {
     my $self = shift;
-    my $IO = $self->{+IO} or return;
-    eval { $IO->flush };
+
+    return $self->{+TB}->handles if $self->{+TB};
+    return;
+}
+
+sub set_no_header {
+    my $self = shift;
+    ($self->{+_NO_HEADER}) = @_;
+    $self->{+TB}->set_no_header(@_) if $self->{+TB};
+    $self->{+_NO_HEADER};
+}
+
+sub set_no_diag {
+    my $self = shift;
+    ($self->{+_NO_DIAG}) = @_;
+    $self->{+TB}->set_no_diag(@_) if $self->{+TB};
+    $self->{+_NO_DIAG};
+}
+
+sub set_no_numbers {
+    my $self = shift;
+    ($self->{+_NO_NUMBERS}) = @_;
+    $self->{+TB}->set_no_numbers(@_) if $self->{+TB};
+    $self->{+_NO_NUMBERS};
+}
+
+sub set_handles {
+    my $self = shift;
+    return $self->{+TB}->set_handles(@_) if $self->{+TB};
+    return;
+}
+
+sub terminate {
+    my $self = shift;
+    return $self->SUPER::terminate(@_) unless $self->{+TB};
+    return $self->{+TB}->terminate(@_);
+}
+
+sub finalize {
+    my $self = shift;
+    return $self->SUPER::finalize(@_) unless $self->{+TB};
+    return $self->{+TB}->finalize(@_);
+}
+
+sub DESTROY {}
+
+our $AUTOLOAD;
+
+sub AUTOLOAD {
+    my $this = shift;
+
+    my $meth = $AUTOLOAD;
+    $meth =~ s/^.*:://g;
+
+    my $type = ref($this);
+
+    return $this->{+TB}->$meth(@_)
+        if $type && $this->{+TB} && $this->{+TB}->can($meth);
+
+    $type ||= $this;
+    croak qq{Can't locate object method "$meth" via package "$type"};
+}
+
+sub isa {
+    my $in = shift;
+    return $in->SUPER::isa(@_) unless ref($in) && $in->{+TB};
+    return $in->SUPER::isa(@_) || $in->{+TB}->isa(@_);
+}
+
+sub can {
+    my $in = shift;
+    return $in->SUPER::can(@_) unless ref($in) && $in->{+TB};
+    return $in->SUPER::can(@_) || $in->{+TB}->can(@_);
 }
 
 1;

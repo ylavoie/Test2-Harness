@@ -7,8 +7,9 @@ use IO::Handle;
 use Test2::Harness::Util();
 
 use Carp qw/croak/;
+use Fcntl qw/SEEK_SET SEEK_CUR/;
 
-use Test2::Harness::Util::HashBase qw{ -name -_fh -_buffer done };
+use Test2::Harness::Util::HashBase qw{ -name -_fh done -stamped -line_pos };
 
 sub exists { -e $_[0]->{+NAME} }
 
@@ -24,8 +25,6 @@ sub init {
         $fh->blocking(0);
         $self->{+_FH} = $fh;
     }
-
-    $self->{+_BUFFER} = '';
 }
 
 sub open_file {
@@ -54,7 +53,7 @@ sub reset {
     my $self = shift;
     delete $self->{+_FH};
     delete $self->{+DONE};
-    $self->{+_BUFFER} = '';
+    delete $self->{+LINE_POS};
     return;
 }
 
@@ -67,35 +66,31 @@ sub fh {
     return $self->{+_FH};
 }
 
-# When reading from a file that is still growing we have to reset EOF
-# frequently, and also may get a partial line if we read halway thorugh a line
-# being written, so we need to add our own buffering.
 sub read_line {
     my $self = shift;
+    my %params = @_;
+
+    my $pos = $params{from};
+    $pos = $self->{+LINE_POS} ||= 0 unless defined $pos;
 
     my $fh = $self->fh or return undef;
+    seek($fh,$pos,SEEK_SET) or die "Could not seek: $!";
 
-    $self->{+_BUFFER} = '' unless defined $self->{+_BUFFER};
+    my $line = <$fh>;
 
-    my $line;
-    until ($line) {
-        seek($fh,0,1); # Clear EOF
-        my $got = <$fh>;
+    # No line, nothing to do
+    return unless defined $line && length($line);
 
-        $self->{+_BUFFER} .= $got if defined $got;
+    # Partial line, hold off unless done
+    return unless $self->{+DONE} || substr($line, -1, 1) eq "\n";
 
-        # If the line does not end in a newline we will return for now and try
-        # to read the rest of the line later. However if 'done' is set we want
-        # to skip this check and return the data anyway as a newline will never
-        # come.
-        return undef unless ($self->{+DONE} && length $self->{+_BUFFER}) || substr($self->{+_BUFFER}, -1, 1) eq "\n";
+    my $new_pos = tell($fh);
+    die "Failed to 'tell': $!" if $new_pos == -1;
 
-        $line = $self->{+_BUFFER};
-        $self->{+_BUFFER} = '';
-        last;
-    }
+    $line = $self->decode($line);
 
-    return $self->decode($line);
+    $self->{+LINE_POS} = $new_pos unless defined $params{peek} || defined $params{from};
+    return ($pos, $new_pos, $line);
 }
 
 1;

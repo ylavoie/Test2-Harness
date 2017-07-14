@@ -59,11 +59,9 @@ is($two->fh, undef, "return undef for missing file");
 
 $one->set_done(1);
 is($one->done, 1, "can set done");
-$one->{_buffer} = 'xyz';
 $one->reset;
 ok(!$one->{_fh}, "removed fh");
 ok(!$one->done, "cleared done flag");
-is($one->_buffer, '', "reset buffer to empty string");
 
 $two->reset;
 is($two->read_line, undef, "cannot read lines from missing file");

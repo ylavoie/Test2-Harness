@@ -48,6 +48,7 @@ sub write_file {
 sub open_file {
     my ($file, $mode) = @_;
     $mode ||= '<';
+
     open(my $fh, $mode, $file) or confess "Could not open file '$file' ($mode): $!";
     return $fh;
 }

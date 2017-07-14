@@ -2,6 +2,8 @@ use Test2::Bundle::Extended -target => 'Test2::Harness::Util';
 
 use ok $CLASS => ':ALL';
 
+use File::Temp qw/tempfile/;
+
 imported_ok qw{
     read_file
     write_file

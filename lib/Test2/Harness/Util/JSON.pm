@@ -16,13 +16,15 @@ BEGIN {
     }
 }
 
-our @EXPORT = qw{JSON encode_json decode_json encode_pretty_json};
+our @EXPORT = qw{JSON encode_json decode_json encode_pretty_json encode_canon_json};
 BEGIN { require Exporter; our @ISA = qw(Exporter) }
 
-my $json = JSON->new->utf8(1);
-my $pretty = JSON->new->utf8(1)->pretty(1)->canonical(1);
+my $json = JSON->new->utf8(1)->convert_blessed(1);
+my $canon = JSON->new->utf8(1)->canonical(1)->convert_blessed(1);
+my $pretty = JSON->new->utf8(1)->pretty(1)->canonical(1)->convert_blessed(1);
 
 sub encode_json { $json->encode(@_) }
+sub encode_canon_json { $canon->encode(@_) }
 sub encode_pretty_json { $pretty->encode(@_) }
 
 sub decode_json {
