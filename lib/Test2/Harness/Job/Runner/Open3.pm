@@ -41,7 +41,7 @@ sub run {
         (map { "-I$_" } @{$test->libs}, $class->find_inc),
         $ENV{HARNESS_PERL_SWITCHES} ? $ENV{HARNESS_PERL_SWITCHES} : (),
         @{$test->switches},
-        "-MTest2::Formatter::Stream=file,$event_file",
+        $test->no_stream ? () : ("-MTest2::Formatter::Stream=file,$event_file"),
         $test->file,
         @{$test->args},
     );

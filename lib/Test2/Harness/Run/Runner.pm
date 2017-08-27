@@ -240,6 +240,10 @@ sub _start {
         $env->{PERL5LIB} = $p5l;
 
         my $job = Test2::Harness::Job->new(
+            # These can be overriden by the task
+            no_stream => $run->no_stream,
+            no_fork   => $run->no_fork,
+
             %$task,
 
             # These win out over task data, most are merged with task data here

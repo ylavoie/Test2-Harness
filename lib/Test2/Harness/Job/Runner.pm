@@ -56,6 +56,7 @@ sub run {
     my $via;
 
     for my $item (@{$self->{+VIA}}) {
+        next if $item eq 'Fork' && $self->job->no_fork;
         my $class = $RUN_MAP{$item};
 
         unless ($class) {
@@ -97,10 +98,11 @@ sub output_filenames {
     return ($in_file, $out_file, $err_file, $event_file);
 }
 
-sub env_vars { shift->job->env_vars }
-sub libs     { shift->job->libs }
-sub args     { shift->job->args }
-sub input    { shift->job->input }
+sub no_stream { shift->job->no_stream }
+sub env_vars  { shift->job->env_vars }
+sub libs      { shift->job->libs }
+sub args      { shift->job->args }
+sub input     { shift->job->input }
 
 sub headers {
     my $self = shift;

@@ -37,6 +37,8 @@ use Test2::Harness::Util::HashBase qw{
     -env_vars
     -test_args
     -chdir
+    -no_stream
+    -no_fork
 
     -verbose
     -formatter
@@ -87,6 +89,13 @@ Usage: $0 $name [options] [--] [test files/dirs] [::] [arguments to test scripts
 
     -c path/to/dir      Tell yath to chdir to a new directory before starting
     --chdir path/to/dir
+
+    --stream            Use Test2::Formatter::Stream when running tests (Default:On)
+    --no-stream         Do not use Test2::Formatter::Stream (Legacy Compatability)
+    --TAP --tap         Aliases for --no-stream
+
+    --fork              Fork to start tests instead of starting a new perl (Default: On)
+    --no-fork           Do not fork to start new tests
 
   Library Path Options:
 
@@ -177,6 +186,11 @@ Usage: $0 $name [options] [--] [test files/dirs] [::] [arguments to test scripts
                 will NOT share a filehandle, they each get the full string to
                 STDIN.
 
+          -A
+          --author-testing
+
+                Set the 'AUTHOR_TESTING' environment variable to true.
+
           -E "VAR=VALUE"
           --env-vars=s "VAR=VALUE"
 
@@ -253,6 +267,14 @@ sub init {
             'h|help'             => \($self->{+HELP}),
             't|tmpdir=s'         => \$tmp_dir,
 
+            'A|author-testing' => sub { $self->{+ENV_VARS}->{AUTHOR_TESTING} = 1 },
+
+            'T|TAP|tap|no-stream' => \($self->{+NO_STREAM}),
+            'stream'              => sub { $self->{+NO_STREAM} = 0 },
+
+            'fork' => sub { $self->{+NO_FORK} = 0 },
+            'no-fork' => \($self->{+NO_FORK}),
+
             'formatter=s'      => \($self->{+FORMATTER}),
             'show-job-end!'    => \($self->{+SHOW_JOB_END}),
             'show-job-info!'   => \($self->{+SHOW_JOB_INFO}),
@@ -284,7 +306,6 @@ sub init {
 
         $self->{+TEST_ARGS} = \@test_args;
         $self->{+SEARCH} = [@search, @args] if @search || @args;
-
     }
 
 
@@ -367,6 +388,8 @@ sub run {
         search     => $self->{+SEARCH},
         unsafe_inc => $self->{+UNSAFE_INC},
         env_vars   => $self->{+ENV_VARS},
+        no_stream  => $self->{+NO_STREAM},
+        no_fork    => $self->{+NO_FORK},
     );
 
     my $runner = Test2::Harness::Run::Runner->new(

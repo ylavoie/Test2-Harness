@@ -88,9 +88,12 @@ sub run {
     Test2::API::test2_post_prefork_reset() if $INC{'Test2/API.pm'};
 
     push @INC => @{$test->libs};
-    $ENV{T2_FORMATTER} = 'Stream';
-    require Test2::Formatter::Stream;
-    Test2::Formatter::Stream->import(file => $event_file);
+
+    unless ($test->no_stream) {
+        $ENV{T2_FORMATTER} = 'Stream';
+        require Test2::Formatter::Stream;
+        Test2::Formatter::Stream->import(file => $event_file);
+    }
 
     @ARGV = @{$test->args};
 

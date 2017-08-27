@@ -21,6 +21,8 @@ use Test2::Harness::Util::HashBase qw{
     -unsafe_inc
 
     -env_vars
+    -no_stream
+    -no_fork
 };
 
 sub init {

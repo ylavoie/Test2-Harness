@@ -15,6 +15,8 @@ use Test2::Harness::Util::HashBase qw{
     -switches
     -args
     -input
+    -no_stream
+    -no_fork
 };
 
 sub init {
