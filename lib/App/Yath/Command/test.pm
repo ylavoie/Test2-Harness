@@ -493,6 +493,7 @@ sub run {
     }
 
     my $harness = Test2::Harness->new(
+        run_id            => $self->{+RUN_ID},
         live              => 1,
         feeder            => $feeder,
         loggers           => $loggers,

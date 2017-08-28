@@ -53,10 +53,11 @@ sub DEFAULT_TAG_COLOR() {
         'STDERR'   => Term::ANSIColor::color('yellow'),
         'RUN INFO' => Term::ANSIColor::color('bold bright_blue'),
         'JOB INFO' => Term::ANSIColor::color('bold bright_blue'),
-        'LAUNCH' => Term::ANSIColor::color('bold bright_white'),
-        'PASSED' => Term::ANSIColor::color('bold bright_green'),
-        'FAILED' => Term::ANSIColor::color('bold bright_red'),
-        'REASON' => Term::ANSIColor::color('magenta'),
+        'LAUNCH'   => Term::ANSIColor::color('bold bright_white'),
+        'PASSED'   => Term::ANSIColor::color('bold bright_green'),
+        'FAILED'   => Term::ANSIColor::color('bold bright_red'),
+        'REASON'   => Term::ANSIColor::color('magenta'),
+        'TIMEOUT'  => Term::ANSIColor::color('magenta'),
     );
 }
 
@@ -450,13 +451,15 @@ sub render_assert {
 
     substr($tree, -2, 2, '+~') if $f->{parent};
 
-    return $self->build_line('assert', 'PASS', $tree, $f->{assert}->{details})
+    my $name = $f->{assert}->{details} || '<UNNAMED ASSERTION>';
+
+    return $self->build_line('assert', 'PASS', $tree, $name)
         if $f->{assert}->{pass};
 
-    return $self->build_line('assert', '! PASS !', $tree, $f->{assert}->{details})
+    return $self->build_line('assert', '! PASS !', $tree, $name)
         if $f->{amnesty} && @{$f->{amnesty}};
 
-    return $self->build_line('assert', 'FAIL', $tree, $f->{assert}->{details})
+    return $self->build_line('assert', 'FAIL', $tree, $name)
 }
 
 sub render_amnesty {

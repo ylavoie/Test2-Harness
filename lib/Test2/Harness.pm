@@ -6,7 +6,9 @@ our $VERSION = '0.001001';
 
 use Carp qw/croak/;
 use List::Util qw/sum/;
-use Time::HiRes qw/sleep/;
+use Time::HiRes qw/sleep time/;
+
+use Test2::Harness::Util::Term qw/USE_ANSI_COLOR/;
 
 use Test2::Harness::Util::HashBase qw{
     -feeder
@@ -20,10 +22,14 @@ use Test2::Harness::Util::HashBase qw{
     -jobs
     -event_timeout
     -post_exit_timeout
+    -run_id
 };
 
 sub init {
     my $self = shift;
+
+    croak "'run_id' is a required attribute"
+        unless $self->{+RUN_ID};
 
     croak "'feeder' is a required attribute"
         unless $self->{+FEEDER};
@@ -73,17 +79,24 @@ sub iteration {
     my $jobs = $self->{+JOBS};
 
     while (1) {
+        my @events;
+
         # Track active watchers in a second hash, this avoids looping over all
         # watchers each iteration.
         for my $job_id (sort keys %{$self->{+ACTIVE}}) {
             my $watcher = $self->{+ACTIVE}->{$job_id};
-            next unless $watcher->complete;
 
-            $self->{+FEEDER}->job_completed($job_id);
-            delete $self->{+ACTIVE}->{$job_id};
+            if ($watcher->complete) {
+                $self->{+FEEDER}->job_completed($job_id);
+                delete $self->{+ACTIVE}->{$job_id};
+            }
+            elsif($self->{+LIVE}) {
+                push @events => $self->check_timeout($watcher);
+            }
         }
 
-        my @events = $self->{+FEEDER}->poll($self->{+BATCH_SIZE}) or last;
+        push @events => $self->{+FEEDER}->poll($self->{+BATCH_SIZE});
+        last unless @events;
 
         for my $event (@events) {
             my $job_id = $event->job_id;
@@ -134,6 +147,85 @@ sub iteration {
     }
 
     return;
+}
+
+sub check_timeout {
+    my $self = shift;
+    my ($watcher) = @_;
+
+    my $stamp = time;
+
+    my $delta = $stamp - $watcher->last_event;
+
+    my $timeouts = 0;
+    if (my $timeout = $self->{+EVENT_TIMEOUT}) {
+        return $self->timeout($watcher, 'event', $timeout, <<"        EOT") if $delta >= $timeout;
+This happens if a test has not produced any events within a timeout period, but
+does not appear to be finished. Usually this happens when a test has frozen.
+        EOT
+    }
+
+    # Not done if there is no exit
+    return unless $watcher->has_exit;
+
+    if (my $timeout = $self->{+POST_EXIT_TIMEOUT}) {
+        return $self->timeout($watcher, 'post-exit', $timeout, <<"        EOT") if $delta >= $timeout;
+Sometimes a test will fork producing output in the child while the parent is
+allowed to exit. In these cases we cannot rely on the original process exit to
+tell us when a test is complete. In cases where we have an exit, and partial
+output (assertions with no final plan, or a plan that has not been completed)
+we wait for a timeout period to see if any additional events come into
+existence.
+        EOT
+    }
+
+    return;
+}
+
+sub timeout {
+    my $self = shift;
+    my ($watcher, $type, $timeout, $msg) = @_;
+
+    my $job_id = $watcher->job->job_id;
+    my $file   = $watcher->job->file;
+
+    my @info = (
+        {
+            details   => ucfirst($type) . " timeout after $timeout second(s) for job $job_id: $file\n$msg",
+            debug     => 1,
+            important => 1,
+            tag       => 'TIMEOUT',
+        }
+    );
+
+    my $event = Test2::Harness::Event->new(
+        job_id     => $job_id,
+        run_id     => $self->{+RUN_ID},
+        event_id   => "timeout-$type-$job_id",
+        stamp      => time,
+        facet_data => {info => \@info},
+    );
+
+    return $event unless $self->{+LIVE};
+    my $pid = $watcher->job->pid || 'NA';
+
+    push @info => {
+        details   => "Killing job: $job_id, PID: $pid",
+        debug     => 1,
+        important => 1,
+        tag       => 'TIMEOUT',
+    } unless $type eq 'post-exit';
+
+    return $event if $watcher->kill;
+
+    push @info => {
+        details   => "Could not kill job $job_id",
+        debug     => 1,
+        important => 1,
+        tag       => 'TIMEOUT',
+    };
+
+    return $event;
 }
 
 1;

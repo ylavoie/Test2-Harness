@@ -8,8 +8,6 @@ use Carp qw/croak/;
 use Scalar::Util qw/blessed/;
 use Time::HiRes qw/time/;
 
-use Test2::Harness::Util::Term qw/USE_ANSI_COLOR/;
-
 use Test2::Harness::Util::HashBase qw{
     -job
     -live
@@ -29,8 +27,6 @@ use Test2::Harness::Util::HashBase qw{
     -subtests
 
     -last_event
-    -event_timeout
-    -post_exit_timeout
 };
 
 sub init {
@@ -44,10 +40,10 @@ sub init {
     $self->{+ASSERTION_COUNT} = 0;
 
     $self->{+NESTED} = 0 unless defined $self->{+NESTED};
-
-    $self->{+EVENT_TIMEOUT}     = 60 unless defined $self->{+EVENT_TIMEOUT};
-    $self->{+POST_EXIT_TIMEOUT} = 15 unless defined $self->{+POST_EXIT_TIMEOUT};
 }
+
+sub has_exit { defined $_[0]->{+EXIT} }
+sub has_plan { defined $_[0]->{+PLAN} }
 
 sub file {
     my $self = shift;
@@ -231,6 +227,20 @@ sub pass {
 # We do not ever want the watcher to be stored
 sub TO_JSON { undef }
 
+sub kill {
+    my $self = shift;
+
+    $self->{+_COMPLETE} = 1;
+
+    return 0 unless $self->{+LIVE};
+    return 1 if defined $self->{+EXIT};
+
+    my $pid = $self->{+JOB}->pid;
+
+    return kill('TERM', $pid) if $pid;
+    return 0;
+}
+
 sub complete {
     my $self = shift;
 
@@ -253,72 +263,7 @@ sub complete {
     # Script exited with completed plan
     return $self->{+_COMPLETE} = 1 if $has_exit && $has_plan && $plan <= $count;
 
-    my $stamp = time;
-
-    my $delta = $stamp - $self->{+LAST_EVENT};
-
-    my $timeouts = 0;
-    if (my $timeout = $self->{+EVENT_TIMEOUT}) {
-        $timeouts++;
-        return $self->timeout('event', $timeout, <<"        EOT") if $delta >= $timeout;
-This happens if a test has not produced any events within a timeout period, but
-does not appear to be finished. Usually this happens when a test has frozen.
-        EOT
-    }
-
-    # Not done if there is no exit
-    return 0 unless $has_exit;
-
-    # If there is not a plan or count, but we have exited, it is probably a
-    # complete failure, no timeout.
-    return $self->{+_COMPLETE} = 1 unless $has_plan || $count;
-
-    if (my $timeout = $self->{+POST_EXIT_TIMEOUT}) {
-        $timeouts++;
-        return $self->timeout('post-exit', $timeout, <<"        EOT") if $delta >= $timeout;
-Sometimes a test will fork producing output in the child while the parent is
-allowed to exit. In these cases we cannot rely on the original process exit to
-tell us when a test is complete. In cases where we have an exit, and partial
-output (assertions with no final plan, or a plan that has not been completed)
-we wait for a timeout period to see if any additional events come into
-existence.
-        EOT
-    }
-
-    # If there are no timeouts then we are done.
-    return $self->{+_COMPLETE} = 1 unless $timeouts;
-
-    # Not done
     return 0;
-}
-
-sub timeout {
-    my $self = shift;
-    my ($type, $timeout, $msg) = @_;
-
-    my $job_id = $self->{+JOB}->job_id;
-    my $file   = $self->{+JOB}->file;
-
-    if (-t STDERR) {
-        print STDERR Term::ANSIColor::color('reset') if USE_ANSI_COLOR;
-        print STDERR "\r\e[K";
-    }
-
-    warn ucfirst($type) . " timeout after $timeout second(s) for job $job_id: $file\n$msg\n";
-
-    return 1 unless $self->{+LIVE};
-
-    my $pid = $self->{+JOB}->pid;
-
-    if ($pid) {
-        warn "Killing job: $job_id, PID: $pid\n\n";
-        kill('TERM', $pid) or warn "Kill signal could not be sent to job $job_id PID $pid.";
-    }
-    else {
-        warn "Cannot kill job $job_id, no PID";
-    }
-
-    return $self->{+_COMPLETE} = 1;
 }
 
 1;
