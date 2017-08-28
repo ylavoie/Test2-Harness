@@ -102,7 +102,6 @@ sub DEFAULT_JOB_COLOR() {
         'bold blue on_green',
         'bold bright_cyan on_blue',
         'bold bright_blue on_cyan',
-        'bold bright_magenta on_bright_black',
         'bold bright_blue on_green',
         'bold bright_white on_blue',
         'bold bright_cyan on_bright_black',

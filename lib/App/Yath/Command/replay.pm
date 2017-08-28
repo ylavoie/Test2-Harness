@@ -211,6 +211,7 @@ sub run {
         feeder    => $feeder,
         renderers => $renderers,
         jobs      => $self->{+JOBS},
+        run_id    => 'replay',
     );
 
     my $stat = $harness->run();
