@@ -314,7 +314,7 @@ sub render_tree {
     if ($f->{harness} && $f->{harness}->{job_id}) {
         my $id = $f->{harness}->{job_id};
 
-        my ($color, $reset) = ("", "");
+        my ($color, $reset) = (''. '');
         if ($self->{+JOB_COLORS}) {
             $color = $self->{+JOB_COLORS}->{used}->{$id} ||= shift @{$self->{+JOB_COLORS}->{free}} || '';
             $reset = $self->{+COLOR}->{reset};
@@ -328,7 +328,7 @@ sub render_tree {
             $len = $self->{+JOB_LENGTH};
         }
 
-        $job = sprintf("%sjob %0${len}u%s ", $color, $id, $reset);
+        $job = sprintf("%sjob %0${len}u%s ", $color, $id, $reset || '');
     }
 
     my $depth = $f->{trace}->{nested} || 0;
