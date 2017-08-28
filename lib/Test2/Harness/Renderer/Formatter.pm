@@ -79,6 +79,12 @@ sub render_event {
                 important => 1,
                 details   => $file,
             };
+            push @{$f->{info}} => {
+                tag       => 'SKIPPED',
+                debug     => 0,
+                important => 1,
+                details   => $skip,
+            } if $skip;
         }
     }
 

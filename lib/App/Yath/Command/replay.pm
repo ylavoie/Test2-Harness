@@ -15,6 +15,7 @@ use Test2::Harness::Util::HashBase qw{
     -help
 
     -log_file
+    -jobs
 
     -verbose
     -formatter
@@ -34,7 +35,15 @@ sub usage {
     my $name = $self->name;
 
     return <<"    EOT";
-Usage: $0 $name [options] event_log.jsonl[.gz|.bz2]
+Usage: $0 $name [options] event_log.jsonl[.gz|.bz2] [job1, job2, ...]
+
+This yath command will re-run the harness against an event log produced by a
+previous test run. The only required argument is the path to the log file,
+which maybe compressed. Any extra arguments are assumed to be job id's. If you
+list any jobs, only listed jobs will be processed.
+
+This command accepts all the same renderer/formatter options that the 'test'
+command accepts.
 
   Simple Options:
 
@@ -82,13 +91,17 @@ sub init {
     my $self = shift;
 
     if ($self->args && @{$self->args}) {
-        my (@args, $file);
+        my (@args, $file, @jobs);
 
         my $last_mark = '';
         for my $arg (@{$self->args}) {
             if ($last_mark eq '--') {
-                die "Too many files specified.\n" if $file;
-                $file = $arg;
+                if ($file) {
+                    push @jobs => $arg;
+                }
+                else {
+                    $file = $arg;
+                }
             }
             else {
                 if ($arg eq '--' || $arg eq '::') {
@@ -113,11 +126,16 @@ sub init {
         );
         die "Could not parse the command line options given.\n" unless $args_ok;
 
-        ($file) = shift @args unless $file;
+        if ($file) {
+            push @jobs => @args;
+        }
+        else {
+            ($file, @jobs) = @args;
+        }
 
         die "No file specified.\n" if !$file;
-        die "Too many files specified.\n" if $file && @args;
 
+        $self->{+JOBS} = {map { $_ => 1 } @jobs} if @jobs;
         $self->{+LOG_FILE} = $file;
     }
 
@@ -191,6 +209,7 @@ sub run {
         live      => 0,
         feeder    => $feeder,
         renderers => $renderers,
+        jobs      => $self->{+JOBS},
     );
 
     my $stat = $harness->run();

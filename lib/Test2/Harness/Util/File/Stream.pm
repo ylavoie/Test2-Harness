@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 use Carp qw/croak/;
-use Fcntl qw/LOCK_EX LOCK_UN/;
+use Fcntl qw/LOCK_EX LOCK_UN SEEK_SET/;
 
 use parent 'Test2::Harness::Util::File';
 use Test2::Harness::Util::HashBase qw/use_write_lock/;
@@ -61,6 +61,17 @@ sub write {
     close($fh) or die "Could not clone file '$name': $!";
 
     return @_;
+}
+
+sub seek {
+    my $self = shift;
+    my ($pos) = @_;
+
+    my $fh   = $self->fh;
+    my $name = $self->{+NAME};
+
+    seek($fh, $pos, SEEK_SET) or die "Could not seek to position $pos in file '$name': $!";
+    $self->{+LINE_POS} = $pos;
 }
 
 1;

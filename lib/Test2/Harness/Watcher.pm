@@ -147,7 +147,7 @@ sub subtest_process {
 
     if ($f->{plan} && !$f->{plan}->{none}) {
         $self->{+_PLANS}++;
-        $self->{+PLAN} = $f->{plan}->{count} if $f->{plan};
+        $self->{+PLAN} = $f->{plan};
     }
 
     if ($f->{harness_job_exit} && defined $f->{harness_job_exit}->{exit}) {
@@ -169,7 +169,7 @@ sub subtest_fail_info_facet_list {
 
     my @out;
 
-    my $plan = $self->{+PLAN};
+    my $plan = $self->{+PLAN} ? $self->{+PLAN}->{count} : undef;
     my $count = $self->{+ASSERTION_COUNT};
 
     if (!$self->{+_PLANS}) {
@@ -234,7 +234,7 @@ sub complete {
     return 1 if $self->{+_COMPLETE};
 
     my $exit  = $self->{+EXIT};
-    my $plan  = $self->{+PLAN};
+    my $plan  = $self->{+PLAN} ? $self->{+PLAN}->{count} : undef;
     my $count = $self->{+ASSERTION_COUNT};
 
     my $has_exit = defined($exit) ? 1 : 0;

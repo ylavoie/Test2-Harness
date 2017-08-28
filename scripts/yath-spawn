@@ -11,7 +11,20 @@ my $spawn = Test2::Harness::Run::Runner->new(
     dir => $dir,
 );
 
+$SIG{HUP} = sub {
+    print STDERR <<"    EOT";
+Got SIGHUP, adding a respawn action to the queue...
+This will cause the runner to restart as soon as it finishes processing any
+items that were already in the queue. New items that get queued will be run
+after the respawn.
+    EOT
+    $spawn->respawn;
+};
+
 my $test_file = $spawn->start;
+
+# Do not keep the signal handler post-fork when we are running a test file.
+$SIG{HUP} = 'DEFAULT';
 
 unless($test_file) {
     my $complete = File::Spec->catfile($dir, 'complete');

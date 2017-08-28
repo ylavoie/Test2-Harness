@@ -65,6 +65,22 @@ sub usage {
     return <<"    EOT";
 Usage: $0 $name [options] [--] [test files/dirs] [::] [arguments to test scripts]
 
+This yath command (which is also the default command) will run all the test
+files for the current project. If no test files are specified this command will
+look for the 't', and 't2' dirctories, as well as the 'test.pl' file.
+
+This command is always recursive when given directories.
+
+This command will add 'lib', 'blib/arch' and 'blib/lib' to the perl path for
+you by default.
+
+Any command line argument that is not an option will be treated as a test file
+or directory of test files to be run.
+
+If you wish to specify the ARGV for tests you may append them after '::'. This
+is mainly useful for Test::Class::Moose and similar tools. EVERY test run will
+get the same ARGV.
+
   Simple Options:
 
     --id 12345          Specify the run-id (Default: current unix time)
@@ -74,7 +90,7 @@ Usage: $0 $name [options] [--] [test files/dirs] [::] [arguments to test scripts
 
     -h --help           Exit after showing this help message
 
-    --unsafe-inc        Turn on '.' in \@INC (Default: On)
+    --unsafe-inc        Turn on '.' in \@INC (Default: On, but this may change)
 
     -k --keep-dir       Keep the temporary work directory for review
 
@@ -96,6 +112,8 @@ Usage: $0 $name [options] [--] [test files/dirs] [::] [arguments to test scripts
 
     --fork              Fork to start tests instead of starting a new perl (Default: On)
     --no-fork           Do not fork to start new tests
+                        This is only supported on platforms with a true 'fork'
+                        implementation.
 
   Library Path Options:
 
@@ -108,8 +126,8 @@ Usage: $0 $name [options] [--] [test files/dirs] [::] [arguments to test scripts
     -I path/to/lib      Include a specific path. This can be specified multiple
                         times
 
-    -p My::Lib          Preload a perl module, if you specify this tests will be
-    --preload My::Lib   run by forking instead of starting a new perl each time
+    -p My::Lib          Preload a perl module (This implies --fork)
+    --preload My::Lib
 
   Rendering/Display Options:
 
@@ -204,13 +222,6 @@ Usage: $0 $name [options] [--] [test files/dirs] [::] [arguments to test scripts
 
                 Specify perl switches for all tests. This option prevents
                 preload from working.
-
-Any command line argument that is not an option will be treated as a test file
-or directory of test files to be run.
-
-If you wish to specify the ARGV for tests you may append them after '::'. This
-is mainly useful for Test::Class::Moose and similar tools. EVERY test run will
-get the same ARGV.
 
     EOT
 }
@@ -320,7 +331,7 @@ sub init {
     $self->{+RENDERER} ||= '+Test2::Harness::Renderer::Formatter';
 
     $self->{+LOG} ||= 1 if $self->{+LOG_FILE} || $self->{+BZIP2_LOG} || $self->{+GZIP_LOG};
-    $self->{+LOG_FILE} ||= "event-log-$self->{+RUN_ID}.json" if $self->{+LOG};
+    $self->{+LOG_FILE} ||= "event-log-$self->{+RUN_ID}.jsonl" if $self->{+LOG};
     die "You cannot select both bzip2 and gzip for the log.\n"
         if $self->{+BZIP2_LOG} && $self->{+GZIP_LOG};
 
@@ -488,8 +499,8 @@ sub run {
 
     my $bad = $stat->{fail};
     if (@$bad) {
-        print "\nThe following test files failed:\n";
-        print "  ", $_, "\n" for @$bad;
+        print "\nThe following test jobs failed:\n";
+        print "  [", $_->{job_id}, '] ', $_->file, "\n" for sort { $a->{job_id} <=> $b->{job_id} } @$bad;
         print "\n";
         $exit += @$bad;
     }

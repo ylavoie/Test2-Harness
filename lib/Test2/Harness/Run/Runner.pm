@@ -21,9 +21,8 @@ use File::Spec();
 use Test2::Harness::Util::HashBase qw{
     -dir
     -run
-    -run_file -jobs_file -queue_file
+    -run_file -jobs_file -queue_file -queue_index_file
     -err_log -out_log
-    -_cmd
     -_exit
     -pid
 };
@@ -47,11 +46,11 @@ sub init {
 
     croak "'run' is a required attribute" unless $self->{+RUN};
 
-    $self->{+ERR_LOG} = File::Spec->catfile($dir, 'error.log');
-    $self->{+OUT_LOG} = File::Spec->catfile($dir, 'output.log');
-
-    $self->{+JOBS_FILE} = File::Spec->catfile($dir, 'jobs.jsonl');
-    $self->{+QUEUE_FILE} = File::Spec->catfile($dir, 'queue.jsonl');
+    $self->{+ERR_LOG}          = File::Spec->catfile($dir, 'error.log');
+    $self->{+OUT_LOG}          = File::Spec->catfile($dir, 'output.log');
+    $self->{+JOBS_FILE}        = File::Spec->catfile($dir, 'jobs.jsonl');
+    $self->{+QUEUE_FILE}       = File::Spec->catfile($dir, 'queue.jsonl');
+    $self->{+QUEUE_INDEX_FILE} = File::Spec->catfile($dir, 'queue_index');
 
     $self->{+DIR} = $dir;
 }
@@ -86,6 +85,20 @@ sub find_inc {
     return File::Spec->rel2abs($inc);
 }
 
+sub cmd {
+    my $self = shift;
+
+    my $script = $self->find_spawn_script;
+    my $inc    = $self->find_inc;
+
+    return (
+        $^X,
+        "-I$inc",
+        $script,
+        $self->{+DIR},
+    );
+}
+
 sub spawn {
     my $self = shift;
 
@@ -94,38 +107,20 @@ sub spawn {
     my $rf = Test2::Harness::Util::File::JSON->new(name => $self->{+RUN_FILE});
     $rf->write($run->TO_JSON);
 
-    my $script = $self->find_spawn_script;
-    my $inc    = $self->find_inc;
-
     my $err_log = open_file($self->{+ERR_LOG}, '>');
     my $out_log = open_file($self->{+OUT_LOG}, '>');
 
     my $env = $run->env_vars;
     local $ENV{$_} = $env->{$_} for keys %$env;
 
-    my @cmd = (
-        $^X,
-        "-I$inc",
-        $script,
-        $self->{+DIR},
-    );
-
     my $pid = open3(
         undef, ">&" . fileno($out_log), ">&" . fileno($err_log),
-        @cmd,
+        $self->cmd,
     );
-
-    $self->{+_CMD} = \@cmd;
 
     $self->{+PID} = $pid;
 
     return $pid;
-}
-
-sub respawn {
-    my $self = shift;
-    exec(@{$self->{+_CMD}});
-    die "Failed to exec?! $!";
 }
 
 sub wait {
@@ -186,10 +181,20 @@ sub _start {
         use_write_lock => 1,
     );
 
-    # Create the queue file.
-    my $queue_fh = $queue_file->open_file('>');
-    print $queue_fh "";
-    close($queue_fh) or die "Could not close queue file: $!";
+    my $JOB_ID = 1;
+    my $queue_index_file = Test2::Harness::Util::File::JSON->new(name => $self->{+QUEUE_INDEX_FILE});
+    if ($queue_index_file->exists) {
+        my $data = $queue_index_file->read;
+        my $pos = $data->{pos};
+        $JOB_ID = $data->{job_id};
+        $queue_file->seek($pos);
+    }
+    else {
+        # Create the queue file.
+        my $queue_fh = $queue_file->open_file('>');
+        print $queue_fh "";
+        close($queue_fh) or die "Could not close queue file: $!";
+    }
 
     my $run = $self->{+RUN};
     $self->preload if $run->preload;
@@ -201,9 +206,8 @@ sub _start {
 
     my @queue;
 
-    my $JOB_ID = 1;
     while (1) {
-        push @queue => $queue_file->poll;
+        push @queue => $queue_file->poll_with_index;
 
         $reap->();
 
@@ -212,18 +216,29 @@ sub _start {
             next;
         }
 
-        my $id = $JOB_ID++;
-        my $task = shift @queue;
-        if (!$task) {
+        my $item = shift @queue;
+        if (!$item) {
             sleep 0.01;
             next;
         }
 
+        my $task = $item->[-1];
+
         last if $task->{end_queue};
 
+        if ($task->{respawn}) {
+            $queue_index_file->write({pos => $item->[1], job_id => $JOB_ID});
+            exec($self->cmd);
+            warn "Should not get here!";
+            CORE::exit(255);
+        }
+
+        my $id = $JOB_ID++;
         my $file = $task->{file};
         my $dir = File::Spec->catdir($self->{+DIR}, $id);
         mkdir($dir) or die "Could not create job directory '$dir': $!";
+        my $tmp = File::Spec->catdir($dir, 'tmp');
+        mkdir($tmp) or die "Coult not create job temp directory '$tmp': $!";
 
         my $start_file = File::Spec->catfile($dir, 'start');
         my $exit_file = File::Spec->catfile($dir, 'exit');
@@ -234,7 +249,12 @@ sub _start {
 
         my @libs = $run->all_libs;
         unshift @libs => @{$task->{libs}} if $task->{libs};
-        my $env = { %{$run->env_vars}, %{$task->{env_vars} || {}} };
+        my $env = {
+            %{$run->env_vars},
+            TMPDIR => $tmp,
+            TEMPDIR => $tmp,
+            %{$task->{env_vars} || {}}
+        };
 
         my $p5l = join $Config{path_sep} => ($env->{PERL5LIB} || ()), @libs;
         $env->{PERL5LIB} = $p5l;
@@ -314,6 +334,17 @@ sub _reap_proc {
     return $pid;
 }
 
+sub respawn {
+    my $self = shift;
+
+    my $queue_file = Test2::Harness::Util::File::JSONL->new(
+        name => $self->{+QUEUE_FILE},
+        use_write_lock => 1,
+    );
+
+    $queue_file->write({respawn => 1});
+}
+
 sub end_queue {
     my $self = shift;
 
@@ -330,6 +361,7 @@ sub enqueue {
     my ($task) = @_;
 
     croak "You cannot queue anything with the 'end_queue' hash key" if $task->{end_queue};
+    croak "You cannot queue anything with the 'respawn' hash key"   if $task->{respawn};
 
     my $queue_file = Test2::Harness::Util::File::JSONL->new(
         name => $self->{+QUEUE_FILE},

@@ -15,6 +15,7 @@ use Test2::Harness::Util::HashBase qw{
     -watchers
     -active
     -live
+    -jobs
 };
 
 sub init {
@@ -48,10 +49,10 @@ sub run {
         my $watcher = $self->{+WATCHERS}->{$job_id};
 
         if ($watcher->fail) {
-            push @fail => $watcher->job->file;
+            push @fail => $watcher->job;
         }
         else {
-            push @pass => $watcher->job->file;
+            push @pass => $watcher->job;
         }
     }
 
@@ -65,6 +66,7 @@ sub iteration {
     my $self = shift;
 
     my $live = $self->{+LIVE};
+    my $jobs = $self->{+JOBS};
 
     while (1) {
         # Track active watchers in a second hash, this avoids looping over all
@@ -81,6 +83,7 @@ sub iteration {
 
         for my $event (@events) {
             my $job_id = $event->job_id;
+            next if $jobs && !$jobs->{$job_id};
 
             # Log first, before the watchers transform the events.
             $_->log_event($event) for @{$self->{+LOGGERS}};
@@ -111,7 +114,10 @@ sub iteration {
                 if ($f && $f->{harness_job_end}) {
                     $f->{harness_job_end}->{file} = $watcher->file;
                     $f->{harness_job_end}->{fail} = $watcher->fail;
-                    $f->{harness_job_end}->{skip} = defined $watcher->plan && !$watcher->plan;
+
+                    my $plan = $watcher->plan;
+                    $f->{harness_job_end}->{skip} = $plan->{details} || "No reason given" if $plan && !$plan->{count};
+
                     push @{$f->{info}} => $watcher->fail_info_facet_list;
                 }
             }

@@ -5,9 +5,8 @@ use warnings;
 use App::Yath::Util qw/load_command/;
 
 my $cmd_name;
-if (@ARGV && $ARGV[0] =~ m/^--?h(elp)?$/) {
-    shift @ARGV;
-    $cmd_name = 'help';
+if (@ARGV && -f $ARGV[0] && $ARGV[0] =~ m/\.jsonl(\.bz2|\.gz)$/) {
+    $cmd_name = 'replay';
 }
 elsif(!@ARGV || -d $ARGV[0] || -f $ARGV[0] || substr($ARGV[0],0,1) eq '-') {
     $cmd_name = 'test';

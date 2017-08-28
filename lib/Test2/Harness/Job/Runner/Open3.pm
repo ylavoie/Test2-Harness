@@ -33,7 +33,7 @@ sub run {
 
     my $env = {
         %{$test->env_vars},
-#        T2_FORMATTER => 'Stream',
+        T2_FORMATTER => 'Stream',
     };
 
     my @cmd = (
