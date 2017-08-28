@@ -50,6 +50,9 @@ use Test2::Harness::Util::HashBase qw{
     -show_job_launch
     -show_job_end
 
+    -event_timeout
+    -post_exit_timeout
+
     -log
     -log_file
     -bzip2_log
@@ -116,6 +119,14 @@ get the same ARGV.
     --no-fork           Do not fork to start new tests
                         This is only supported on platforms with a true 'fork'
                         implementation.
+
+    --event_timeout #   How long to wait for events before timing out.
+    --et #              This is used to kill tests that appear frozen.
+                        (Default: 60 seconds)
+
+    --post_exit_timeout How long to wait for a test to send final events after
+    --pet #             exiting with an exit value of 0, but an incomplete
+                        plan. (Default: 15 seconds)
 
   Library Path Options:
 
@@ -280,6 +291,9 @@ sub init {
             'h|help'             => \($self->{+HELP}),
             't|tmpdir=s'         => \$tmp_dir,
 
+            'et|event_timeout=i'      => \($self->{+EVENT_TIMEOUT}),
+            'pet|post_exit_timeout=i' => \($self->{+POST_EXIT_TIMEOUT}),
+
             'A|author-testing' => sub { $self->{+ENV_VARS}->{AUTHOR_TESTING} = 1 },
 
             'T|TAP|tap|no-stream' => \($self->{+NO_STREAM}),
@@ -327,10 +341,13 @@ sub init {
     $self->{+SEARCH} ||= [grep { -e $_ } './t', './t2', 'test.pl'];
     $self->{+KEEP_DIR} = 0 unless defined $self->{+KEEP_DIR};
     $self->{+JOB_COUNT} ||= 1;
-    $self->{+LIB} = 1 unless defined $self->{+LIB};
+    $self->{+LIB}  = 1 unless defined $self->{+LIB};
     $self->{+BLIB} = 1 unless defined $self->{+BLIB};
     $self->{+FORMATTER} ||= '+Test2::Formatter::Test2';
-    $self->{+RENDERER} ||= '+Test2::Harness::Renderer::Formatter';
+    $self->{+RENDERER}  ||= '+Test2::Harness::Renderer::Formatter';
+
+    $self->{+EVENT_TIMEOUT}     = 60 unless defined $self->{+EVENT_TIMEOUT};
+    $self->{+POST_EXIT_TIMEOUT} = 15 unless defined $self->{+POST_EXIT_TIMEOUT};
 
     $self->{+LOG} ||= 1 if $self->{+LOG_FILE} || $self->{+BZIP2_LOG} || $self->{+GZIP_LOG};
     $self->{+LOG_FILE} ||= "event-log-$self->{+RUN_ID}.jsonl" if $self->{+LOG};
@@ -476,10 +493,12 @@ sub run {
     }
 
     my $harness = Test2::Harness->new(
-        live => 1,
-        feeder  => $feeder,
-        loggers => $loggers,
-        renderers => $renderers,
+        live              => 1,
+        feeder            => $feeder,
+        loggers           => $loggers,
+        renderers         => $renderers,
+        event_timeout     => $self->{+EVENT_TIMEOUT},
+        post_exit_timeout => $self->{+POST_EXIT_TIMEOUT},
     );
 
     my $queue_file = $runner->queue_file;

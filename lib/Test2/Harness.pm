@@ -18,6 +18,8 @@ use Test2::Harness::Util::HashBase qw{
     -active
     -live
     -jobs
+    -event_timeout
+    -post_exit_timeout
 };
 
 sub init {
@@ -99,9 +101,11 @@ sub iteration {
                         or die "First event for job ($job_id) was not a job start!";
 
                     $watcher = Test2::Harness::Watcher->new(
-                        nested => 0,
-                        job => $job,
-                        live => $live,
+                        nested            => 0,
+                        job               => $job,
+                        live              => $live,
+                        event_timeout     => $self->{+EVENT_TIMEOUT},
+                        post_exit_timeout => $self->{+POST_EXIT_TIMEOUT},
                     );
 
                     $self->{+WATCHERS}->{$job_id} = $watcher;

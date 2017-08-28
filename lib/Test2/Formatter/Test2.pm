@@ -570,6 +570,17 @@ sub render_errors {
     } @{$f->{errors}};
 }
 
+sub DESTORY {
+    my $self = shift;
+
+    my $io = $self->{+IO} or return;
+
+    print $io Term::ANSIColor::color('reset')
+        if USE_ANSI_COLOR;
+
+    print $io "\n";
+}
+
 1;
 
 __END__

@@ -8,6 +8,8 @@ use Carp qw/croak/;
 use Scalar::Util qw/blessed/;
 use Time::HiRes qw/time/;
 
+use Test2::Harness::Util::Term qw/USE_ANSI_COLOR/;
+
 use Test2::Harness::Util::HashBase qw{
     -job
     -live
@@ -258,7 +260,7 @@ sub complete {
     my $timeouts = 0;
     if (my $timeout = $self->{+EVENT_TIMEOUT}) {
         $timeouts++;
-        return $self->timeout('event', <<"        EOT") if $delta >= $timeout;
+        return $self->timeout('event', $timeout, <<"        EOT") if $delta >= $timeout;
 This happens if a test has not produced any events within a timeout period, but
 does not appear to be finished. Usually this happens when a test has frozen.
         EOT
@@ -273,7 +275,7 @@ does not appear to be finished. Usually this happens when a test has frozen.
 
     if (my $timeout = $self->{+POST_EXIT_TIMEOUT}) {
         $timeouts++;
-        return $self->timeout('post-exit', <<"        EOT") if $delta >= $timeout;
+        return $self->timeout('post-exit', $timeout, <<"        EOT") if $delta >= $timeout;
 Sometimes a test will fork producing output in the child while the parent is
 allowed to exit. In these cases we cannot rely on the original process exit to
 tell us when a test is complete. In cases where we have an exit, and partial
@@ -292,19 +294,24 @@ existence.
 
 sub timeout {
     my $self = shift;
-    my ($type, $msg) = @_;
+    my ($type, $timeout, $msg) = @_;
 
     my $job_id = $self->{+JOB}->job_id;
     my $file   = $self->{+JOB}->file;
 
-    warn ucfirst($type) . " timeout for job $job_id: $file\n$msg";
+    if (-t STDERR) {
+        print STDERR Term::ANSIColor::color('reset') if USE_ANSI_COLOR;
+        print STDERR "\r\e[K";
+    }
+
+    warn ucfirst($type) . " timeout after $timeout second(s) for job $job_id: $file\n$msg\n";
 
     return 1 unless $self->{+LIVE};
 
     my $pid = $self->{+JOB}->pid;
 
     if ($pid) {
-        warn "Killing job: $job_id, PID: $pid\n";
+        warn "Killing job: $job_id, PID: $pid\n\n";
         kill('TERM', $pid) or warn "Kill signal could not be sent to job $job_id PID $pid.";
     }
     else {
