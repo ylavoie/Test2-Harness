@@ -2,6 +2,8 @@ package App::Yath::Command::replay;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Test2::Util qw/pkg_to_file/;
 
 use Test2::Harness::Feeder::JSONL;
@@ -204,7 +206,6 @@ sub run {
         }
     }
 
-    use Carp::Always;
     my $harness = Test2::Harness->new(
         live      => 0,
         feeder    => $feeder,

@@ -2,6 +2,8 @@ package Test2::Harness::Job::Runner::Fork;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Scalar::Util qw/openhandle/;
 use Test2::Util qw/clone_io CAN_REALLY_FORK/;
 use Test2::Harness::Util qw/write_file/;

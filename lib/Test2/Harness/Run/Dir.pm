@@ -2,6 +2,8 @@ package Test2::Harness::Run::Dir;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Carp qw/croak/;
 use File::Spec();
 

@@ -3,6 +3,8 @@ package main;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Test2::Harness::Run::Runner;
 
 my ($dir) = @ARGV;

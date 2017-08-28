@@ -2,6 +2,8 @@ package Test2::Harness::Feeder;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Carp qw/confess/;
 
 use Test2::Harness::Watcher();

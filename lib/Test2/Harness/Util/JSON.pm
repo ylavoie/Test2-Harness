@@ -2,6 +2,8 @@ package Test2::Harness::Util::JSON;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 BEGIN {
     local $@ = undef;
     my $ok = eval {

@@ -2,6 +2,8 @@ package Test2::Harness::Renderer::Formatter;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Carp qw/croak/;
 
 use Test2::Harness::Util::JSON qw/encode_pretty_json/;

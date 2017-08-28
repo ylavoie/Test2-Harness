@@ -2,6 +2,8 @@ package Test2::Harness::Feeder::Job;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Carp qw/croak carp/;
 use Scalar::Util qw/blessed/;
 use Time::HiRes qw/time/;

@@ -2,6 +2,8 @@ package App::Yath::Command::test;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use File::Temp qw/tempdir/;
 use IO::Compress::Bzip2 qw/$Bzip2Error/;
 use IO::Compress::Gzip qw/$GzipError/;

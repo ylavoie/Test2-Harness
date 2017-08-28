@@ -2,6 +2,8 @@ package Test2::Harness;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Carp qw/croak/;
 use List::Util qw/sum/;
 use Time::HiRes qw/sleep/;

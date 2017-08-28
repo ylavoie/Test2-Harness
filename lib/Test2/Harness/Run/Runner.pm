@@ -2,6 +2,8 @@ package Test2::Harness::Run::Runner;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Carp qw/croak/;
 use POSIX ":sys_wait_h";
 use Config qw/%Config/;

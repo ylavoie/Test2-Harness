@@ -2,10 +2,11 @@ package Test2::Harness::Feeder::Run;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use Carp qw/croak/;
 use Time::HiRes qw/time/;
 use Scalar::Util qw/blessed/;
-
 
 use Test2::Harness::Feeder::Job;
 use Test2::Harness::Run::Dir;

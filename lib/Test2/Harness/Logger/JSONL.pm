@@ -2,6 +2,8 @@ package Test2::Harness::Logger::JSONL;
 use strict;
 use warnings;
 
+our $VERSION = '0.001001';
+
 use IO::Handle;
 
 use Test2::Harness::Util::JSON qw/encode_canon_json/;
