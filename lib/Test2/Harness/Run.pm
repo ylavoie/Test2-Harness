@@ -55,9 +55,16 @@ sub init {
     my $env = $self->{+ENV_VARS} ||= {};
     $env->{PERL_USE_UNSAFE_INC} = $self->{+UNSAFE_INC} unless defined $env->{PERL_USE_UNSAFE_INC};
 
-    $env->{T2_HARNESS_RUN_ID}  = $self->{+RUN_ID};
-    $env->{T2_HARNESS_JOBS}    = $self->{+JOB_COUNT};
-    $env->{HARNESS_JOBS}       = $self->{+JOB_COUNT};
+    $env->{HARNESS_ACTIVE}    = 1;
+    $env->{T2_HARNESS_ACTIVE} = 1;
+
+    $env->{HARNESS_VERSION}    = "Test2-Harness-$VERSION";
+    $env->{T2_HARNESS_VERSION} = $VERSION;
+
+    $env->{T2_HARNESS_JOBS} = $self->{+JOB_COUNT};
+    $env->{HARNESS_JOBS}    = $self->{+JOB_COUNT};
+
+    $env->{T2_HARNESS_RUN_ID} = $self->{+RUN_ID};
 }
 
 sub all_libs {

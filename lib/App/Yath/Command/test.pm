@@ -349,6 +349,8 @@ sub init {
     $self->{+EVENT_TIMEOUT}     = 60 unless defined $self->{+EVENT_TIMEOUT};
     $self->{+POST_EXIT_TIMEOUT} = 15 unless defined $self->{+POST_EXIT_TIMEOUT};
 
+    $self->{+ENV_VARS} ||= {};
+
     $self->{+LOG} ||= 1 if $self->{+LOG_FILE} || $self->{+BZIP2_LOG} || $self->{+GZIP_LOG};
     $self->{+LOG_FILE} ||= "event-log-$self->{+RUN_ID}.jsonl" if $self->{+LOG};
     die "You cannot select both bzip2 and gzip for the log.\n"
@@ -359,6 +361,9 @@ sub init {
         $self->{+SHOW_RUN_INFO}   = $self->{+VERBOSE} - 1 unless defined $self->{+SHOW_RUN_INFO};
         $self->{+SHOW_JOB_LAUNCH} = 1                     unless defined $self->{+SHOW_JOB_LAUNCH};
         $self->{+SHOW_JOB_END}    = 1                     unless defined $self->{+SHOW_JOB_END};
+
+        $self->{+ENV_VARS}->{HARNESS_IS_VERBOSE} = 1;
+        $self->{+ENV_VARS}->{T2_HARNESS_IS_VERBOSE} = 1;
     }
     else {
         $self->{+VERBOSE} = 0; # Normalize
@@ -366,6 +371,9 @@ sub init {
         $self->{+SHOW_RUN_INFO}   = 0 unless defined $self->{+SHOW_RUN_INFO};
         $self->{+SHOW_JOB_LAUNCH} = 0 unless defined $self->{+SHOW_JOB_LAUNCH};
         $self->{+SHOW_JOB_END}    = 1 unless defined $self->{+SHOW_JOB_END};
+
+        $self->{+ENV_VARS}->{HARNESS_IS_VERBOSE} = 0;
+        $self->{+ENV_VARS}->{T2_HARNESS_IS_VERBOSE} = 0;
     }
 
     unless(defined $self->{+UNSAFE_INC}) {

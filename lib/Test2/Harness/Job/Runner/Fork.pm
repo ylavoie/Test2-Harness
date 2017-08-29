@@ -47,6 +47,9 @@ sub run {
     my $env = $test->env_vars;
     $ENV{$_} = $env->{$_} for keys %$env;
 
+    $ENV{T2_HARNESS_FORKED}  = 1;
+    $ENV{T2_HARNESS_PRELOAD} = 1;
+
     my ($in_file, $out_file, $err_file, $event_file) = $test->output_filenames;
 
     $0 = $file;

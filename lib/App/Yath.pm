@@ -14,7 +14,8 @@ __END__
 
 =head1 NAME
 
-App::Yath - Yet Another Test Harness (Test2-Harness CLI)
+App::Yath - Yet Another Test Harness (Test2-Harness) Command Line Interface
+(CLI)
 
 =head1 DESCRIPTION
 
