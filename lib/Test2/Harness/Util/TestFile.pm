@@ -13,7 +13,7 @@ use File::Spec();
 use Test2::Harness::Util qw/open_file/;
 
 use Test2::Harness::Util::HashBase qw{
-    -file -_scanned -_headers -_shbang -tcm
+    -file -_scanned -_headers -_shbang
 };
 
 sub init {
@@ -185,7 +185,6 @@ sub queue_item {
         category    => $category,
         stamp       => time,
         job_id      => $job_id,
-        tcm         => $self->tcm,
     };
 }
 

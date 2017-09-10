@@ -21,27 +21,25 @@ sub find_inc {
     return File::Spec->rel2abs($inc);
 }
 
-sub find_tcm_script {
-    my $self = shift;
+sub command {
+    my $class = shift;
+    my ($test, $event_file) = @_;
 
-    my $script = $ENV{T2_HARNESS_TCM_SCRIPT} || 'yath-tcm';
-    return $script if -f $script;
+    my $job = $test->job;
 
-    if ($0 && $0 =~ m{(.*)\byath(-.*)?$}) {
-        return "$1$script" if -f "$1$script";
-    }
-
-    # Do we have the full path?
-    # Load IPC::Cmd only if needed, it indirectly loads version.pm which really
-    # screws things up...
-    require IPC::Cmd;
-    if(my $out = IPC::Cmd::can_run($script)) {
-        return $out;
-    }
-
-    die "Could not find '$script' in execution path";
+    return (
+        $^X,
+        (map { "-I$_" } @{$job->libs}, $class->find_inc),
+        $ENV{HARNESS_PERL_SWITCHES} ? $ENV{HARNESS_PERL_SWITCHES} : (),
+        @{$job->switches},
+        (map {"-m$_"} @{$job->load || []}),
+        (map {"-M$_"} @{$job->load_import || []}),
+        $job->use_stream ? ("-MTest2::Formatter::Stream=file,$event_file") : (),
+        $job->times ? ('-MTest2::Plugin::Times') : (),
+        $job->file,
+        @{$job->args},
+    );
 }
-
 
 sub run {
     my $class = shift;
@@ -62,19 +60,7 @@ sub run {
         $job->use_stream ? (T2_FORMATTER => 'Stream') : (),
     };
 
-    my @cmd = (
-        $^X,
-        (map { "-I$_" } @{$job->libs}, $class->find_inc),
-        $ENV{HARNESS_PERL_SWITCHES} ? $ENV{HARNESS_PERL_SWITCHES} : (),
-        @{$job->switches},
-        (map {"-m$_"} @{$job->load || []}),
-        (map {"-M$_"} @{$job->load_import || []}),
-        $job->use_stream ? ("-MTest2::Formatter::Stream=file,$event_file") : (),
-        $job->times ? ('-MTest2::Plugin::Times') : (),
-        $job->tcm ? ($class->find_tcm_script) : (),
-        $job->file,
-        @{$job->args},
-    );
+    my @cmd = $class->command($test, $event_file);
 
     my $pid;
     local_env $env => sub {
