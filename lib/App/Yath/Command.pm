@@ -265,6 +265,13 @@ sub make_run_from_settings {
         mem_usage   => $settings->{mem_usage},
         durations   => $settings->{durations},
 
+        ui => {
+            url          => $settings->{ui},
+            maybe_urls   => $settings->{maybe_ui},
+            ui_durations => $settings->{ui_durations},
+            ui_state     => $settings->{ui_state},
+        },
+
         maybe_durations => $settings->{maybe_durations},
         default_search  => $settings->{default_search},
 
@@ -634,6 +641,42 @@ sub options {
             section => 'Harness Options',
             usage => ['--maybe-durations path', '--maybe-durations url'],
             long_desc => "Same as 'durations' except not fatal if not found. If this and 'durations' are both specified then 'durations' is used as a fallback when this fails. You may specify this option multiple times and the first one that works will be used"
+        },
+
+        {
+            spec => 'u|ui=s',
+            field => 'ui',
+            used_by => {runner => 1, jobs => 1},
+            section => 'Harness Options',
+            usage => ['-u url', '--ui url'],
+            long_desc => "Specify a yath-ui url to use",
+        },
+
+        {
+            spec => 'U|maybe-ui=s',
+            field => 'maybe_ui',
+            used_by => {runner => 1, jobs => 1},
+            section => 'Harness Options',
+            usage => ['-U url', '--maybe-ui url'],
+            long_desc => "Specify yath-ui urls to try to use, first valid one wins. Not fatal if none work",
+        },
+
+        {
+            spec => 'ui-durations',
+            field => 'ui_durations',
+            used_by => {runner => 1, jobs => 1},
+            section => 'Harness Options',
+            usage => ['--ui-durations'],
+            long_desc => "Use yath-ui for durations data",
+        },
+
+        {
+            spec => 'ui-state=s',
+            field => 'ui_state',
+            used_by => {runner => 1, jobs => 1},
+            section => 'Harness Options',
+            usage => ['--ui-state STRING'],
+            long_desc => "Specify a yath-ui state to use when fetching durations data",
         },
 
         {

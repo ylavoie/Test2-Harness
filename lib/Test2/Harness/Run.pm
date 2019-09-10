@@ -58,6 +58,8 @@ use Test2::Harness::Util::HashBase qw{
     -plugins
 
     -cwd
+
+    -ui
 };
 
 sub init {
@@ -105,8 +107,16 @@ sub init {
 
     $env->{T2_HARNESS_RUN_ID} = $self->{+RUN_ID};
 
+    $self->normalize_ui();
 
     $self->pull_durations();
+}
+
+sub normalize_ui {
+    my $self = shift;
+
+    my $specs = delete $self->{+UI} or return;
+
 }
 
 sub pull_durations {
