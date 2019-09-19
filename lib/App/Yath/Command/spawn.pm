@@ -60,6 +60,10 @@ sub generate_run_sub {
     $SIG{INT}  = 'DEFAULT';
     $SIG{TERM} = 'DEFAULT';
 
+    if (defined(${^GLOBAL_PHASE})) {
+        confess "INCORRECT GLOBAL PHASE!" unless ${^GLOBAL_PHASE} eq 'START';
+    }
+
     require goto::file;
 
     if (ref($test) eq 'CODE') {

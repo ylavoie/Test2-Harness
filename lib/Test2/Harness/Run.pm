@@ -18,46 +18,43 @@ use File::Spec;
 use Test2::Harness::Util::TestFile;
 
 use Test2::Harness::Util::HashBase qw{
-    -run_id
-
-    -finite
-    -job_count
-    -switches
-    -libs -lib -blib -tlib
-    -preload
-    -load    -load_import
     -args
-    -input
-    -verbose
-    -dummy
+    -blib
     -cover
-    -event_uuids
-    -mem_usage
-
-    -meta
-    -harness_run_fields
-    -durations
-    -maybe_durations
-
+    -cwd
     -default_search
-    -projects
-    -search
-    -unsafe_inc
-
+    -dummy
+    -durations
     -env_vars
-    -use_stream
-    -use_fork
-    -use_timeout
-    -show_times
-
+    -event_uuids
     -exclude_files
     -exclude_patterns
+    -finite
+    -harness_run_fields
+    -input
+    -job_count
+    -lib
+    -libs
+    -load
+    -load_import
+    -maybe_durations
+    -mem_usage
+    -meta
     -no_long
     -only_long
-
     -plugins
-
-    -cwd
+    -preload
+    -projects
+    -run_id
+    -search
+    -show_times
+    -switches
+    -tlib
+    -unsafe_inc
+    -use_fork
+    -use_stream
+    -use_timeout
+    -verbose
 };
 
 sub init {
