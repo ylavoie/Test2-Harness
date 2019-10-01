@@ -1,0 +1,52 @@
+lib/App/Yath/Options/Run.pm:7:use Test2::Harness::Util::UUID qw/gen_uuid/;
+lib/App/Yath/Options/Run.pm:211:        my $ok    = eval { $field = Test2::Harness::Util::JSON::decode_json($norm); 1 };
+lib/App/Yath/Options/Debug.pm:7:use Test2::Harness::Util::JSON qw/encode_pretty_json/;
+lib/App/Yath/Command/init.pm:9:use Test2::Harness::Util qw/open_file/;
+lib/App/Yath/Command/help.pm:13:use Test2::Harness::Util qw/open_file/;
+lib/App/Yath/Command/test.pm:11:use Test2::Harness::Util::File::JSON;
+lib/App/Yath/Command/test.pm:103:    my $settings_file = Test2::Harness::Util::File::JSON->new(name => File::Spec->catfile($dir, "$file.json"));
+lib/Test2/Harness/Util.pm:1:package Test2::Harness::Util;
+lib/Test2/Harness/Util.pm:151:Test2::Harness::Util - General utility functions for Test2::Harness
+lib/Test2/Harness/Run.pm:8:use Test2::Harness::Util::JSON qw/encode_json/;
+lib/Test2/Harness/Run.pm:9:use Test2::Harness::Util qw/write_file_atomic/;
+lib/Test2/Harness/Util/TestFile.pm:1:package Test2::Harness::Util::TestFile;
+lib/Test2/Harness/Util/TestFile.pm:15:use Test2::Harness::Util qw/open_file/;
+lib/Test2/Harness/Util/TestFile.pm:17:use Test2::Harness::Util::UUID qw/gen_uuid/;
+lib/Test2/Harness/Util/DepTracer.pm:1:package Test2::Harness::Util::DepTracer;
+lib/Test2/Harness/Util/TapParser.pm:1:package Test2::Harness::Util::TapParser;
+lib/Test2/Harness/Util/TapParser.pm:264:Test2::Harness::Util::TapParser - Produce EventFacets from a line of TAP.
+lib/Test2/Harness/Util/UUID.pm:1:package Test2::Harness::Util::UUID;
+lib/Test2/Harness/Util/File.pm:1:package Test2::Harness::Util::File;
+lib/Test2/Harness/Util/File.pm:9:use Test2::Harness::Util();
+lib/Test2/Harness/Util/File.pm:31:    return Test2::Harness::Util::open_file($self->{+NAME}, @_)
+lib/Test2/Harness/Util/File.pm:42:    my $out = Test2::Harness::Util::read_file($self->{+NAME});
+lib/Test2/Harness/Util/File.pm:50:    return Test2::Harness::Util::write_file_atomic($self->{+NAME}, $self->encode(@_));
+lib/Test2/Harness/Util/File.pm:72:        $self->{+_FH}->{$$} = Test2::Harness::Util::maybe_open_file($self->{+NAME}) or return undef;
+lib/Test2/Harness/Util/File.pm:117:Test2::Harness::Util::File - Utility class for manipulating a file.
+lib/Test2/Harness/Util/IPC.pm:1:package Test2::Harness::Util::IPC;
+lib/Test2/Harness/Util/JSON.pm:1:package Test2::Harness::Util::JSON;
+lib/Test2/Harness/Util/JSON.pm:87:Test2::Harness::Util::JSON - Utility class to help Test2::Harness pick the best
+lib/Test2/Harness/Util/Term.pm:1:package Test2::Harness::Util::Term;
+lib/Test2/Harness/Util/Term.pm:46:Test2::Harness::Util::Term - Terminal utilities for Test2::Harness
+lib/Test2/Harness/Util/File/JSONL.pm:1:package Test2::Harness::Util::File::JSONL;
+lib/Test2/Harness/Util/File/JSONL.pm:8:use Test2::Harness::Util::JSON qw/encode_json decode_json/;
+lib/Test2/Harness/Util/File/JSONL.pm:10:use parent 'Test2::Harness::Util::File::Stream';
+lib/Test2/Harness/Util/File/JSONL.pm:26:Test2::Harness::Util::File::JSONL - Utility class for a JSONL file (stream)
+lib/Test2/Harness/Util/File/JSON.pm:1:package Test2::Harness::Util::File::JSON;
+lib/Test2/Harness/Util/File/JSON.pm:8:use Test2::Harness::Util::JSON qw/encode_json decode_json encode_pretty_json/;
+lib/Test2/Harness/Util/File/JSON.pm:10:use parent 'Test2::Harness::Util::File';
+lib/Test2/Harness/Util/File/JSON.pm:29:Test2::Harness::Util::File::JSON - Utility class for a JSON file.
+lib/Test2/Harness/Util/File/Value.pm:1:package Test2::Harness::Util::File::Value;
+lib/Test2/Harness/Util/File/Value.pm:7:use parent 'Test2::Harness::Util::File';
+lib/Test2/Harness/Util/File/Value.pm:39:Test2::Harness::Util::File::Value - Utility class for a file that contains
+lib/Test2/Harness/Util/File/Stream.pm:1:package Test2::Harness::Util::File::Stream;
+lib/Test2/Harness/Util/File/Stream.pm:10:use parent 'Test2::Harness::Util::File';
+lib/Test2/Harness/Util/File/Stream.pm:109:Test2::Harness::Util::File::Stream - Utility class for manipulating a file that
+lib/Test2/Formatter/Test2.pm:8:use Test2::Harness::Util qw/hub_truth/;
+lib/Test2/Formatter/Test2.pm:9:use Test2::Harness::Util::Term qw/USE_ANSI_COLOR/;
+lib/Test2/Formatter/Stream.pm:12:use Test2::Harness::Util::UUID qw/gen_uuid/;
+lib/Test2/Formatter/Stream.pm:13:use Test2::Harness::Util::JSON qw/JSON JSON_IS_XS/;
+lib/Test2/Formatter/Stream.pm:14:use Test2::Harness::Util qw/hub_truth/;
+lib/Test2/Tools/HarnessTester.pm:7:use Test2::Harness::Util::UUID qw/gen_uuid/;
+lib/Test2/Tools/HarnessTester.pm:8:use Test2::Harness::Util qw/open_file/;
+lib/Test2/Tools/HarnessTester.pm:9:use Test2::Harness::Util::IPC qw/run_cmd/;
