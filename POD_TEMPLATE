@@ -1,28 +1,9 @@
-package Test2::Harness::Util::UUID;
-use strict;
-use warnings;
-
-our $VERSION = '0.001100';
-
-use Data::UUID;
-use Importer 'Importer' => 'import';
-
-our @EXPORT = qw/gen_uuid/;
-
-my $UG = Data::UUID->new;
-sub gen_uuid() { $UG->create_str() }
-
-1;
-
-__END__
-
 =pod
 
 =encoding UTF-8
 
 =head1 NAME
 
-Test2::Harness::Util::UUID - Utils for generating UUIDs.
 
 =head1 DESCRIPTION
 
