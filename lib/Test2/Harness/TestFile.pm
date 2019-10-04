@@ -381,6 +381,7 @@ sub queue_item {
         use_stream  => $stream,
         use_timeout => $timeout,
         smoke       => $smoke,
+        rank        => $self->rank,
 
         defined($retry)          ? (retry             => $retry)                   : (),
         defined($retry_isolated) ? (retry_isolated    => $retry_isolated)          : (),
