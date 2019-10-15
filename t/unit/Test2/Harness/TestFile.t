@@ -1,8 +1,6 @@
 use Test2::V0 -target => 'Test2::Harness::TestFile';
 # HARNESS-DURATION-SHORT
 
-use Test2::Plugin::BailOnFail;
-
 use ok $CLASS;
 
 use Test2::Tools::GenTemp qw/gen_temp/;

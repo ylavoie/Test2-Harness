@@ -11,6 +11,7 @@ use Test2::Harness::Util::Queue;
 use Test2::Harness::Util::File::JSON;
 use Test2::Harness::IPC;
 
+use Test2::Harness::Runner::State;
 
 use Test2::Harness::Util::JSON qw/encode_json decode_json/;
 use Test2::Harness::Util qw/mod2file open_file/;
@@ -114,6 +115,8 @@ sub run {
 
     my $settings = $self->settings;
     my $dir = $self->workdir();
+
+    print "XXX: $dir\n";
 
     $self->write_settings_to($dir, 'settings.json');
 
@@ -297,8 +300,8 @@ sub start_runner {
 
     my $ipc = $self->ipc;
     $ipc->spawn(
-        stderr => File::Spec->catfile($dir, 'error.log'),
-        stdout => File::Spec->catfile($dir, 'output.log'),
+        #stderr => File::Spec->catfile($dir, 'error.log'),
+        #stdout => File::Spec->catfile($dir, 'output.log'),
         no_set_pgrp => 1,
         command => [
             $^X, $settings->yath->script,
@@ -325,23 +328,21 @@ sub build_run {
     my $dir = $self->workdir;
 
     my $run = $settings->build(run => 'Test2::Harness::Run');
-    $run->write_queue($dir, $settings->yath->plugins);
 
-    $self->build_run_item($run);
+    mkdir($run->run_dir($dir)) or die "Could not make run dir: $!";
+
+    my $state = Test2::Harness::Runner::State->new(workdir => $dir, job_count => 1);
+
+    my $plugins = $settings->yath->plugins;
+
+    $state->queue_run($run->queue_item($plugins));
+
+    my $job_count = 0;
+    $state->queue_task($_->queue_item(++$job_count, $run->run_id)) for @{$run->find_files($plugins)};
+
+    $state->end_queue();
 
     return $self->{+RUN} = $run;
-}
-
-sub build_run_item {
-    my $self = shift;
-    my ($run) = @_;
-
-    my $settings = $self->{+SETTINGS};
-
-    my $run_queue = $self->run_queue;
-    $run_queue->start();
-    $run_queue->enqueue($run->queue_item($settings->yath->plugins));
-    $self->run_queue->end;
 }
 
 sub parse_args {
