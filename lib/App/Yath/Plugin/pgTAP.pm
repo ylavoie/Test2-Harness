@@ -7,7 +7,6 @@ our $VERSION = '0.001100';
 
 use parent 'App::Yath::Plugin';
 use App::Yath::Options;
-use Data::Printer;
 
 option_group {prefix => 'pgtap', category => "Plugin pgTAP"} => sub {
 
@@ -139,36 +138,15 @@ sub munge_files {
             }
             $tf = Test2::Harness::TestFile->new(
                  file => $tf->relative,
+                 job_class => 'Test2::Harness::Runner::Job::pgTAP',
                  queue_args => [
                      command => $settings->pgtap->psql,
                      binary => 1,
-                     +test_args => [@args, ( '--file', $tf->relative )],
-                     via => 'App::Yath::Plugin::pgTAP::launch'
+                     +test_args => [@args, ( '--file', $tf->relative )]
                  ]
             );
         }
     }
-}
-
-use Carp qw/croak confess/;
-use Test2::Harness::Util::IPC qw/run_cmd/;
-
-sub launch {
-    my ($runner,$job) = @_;
-    my $params = $job->spawn_params;
-    #Patch in 'psql' from settings
-    $params->{command}[0] = $job->{task}->{command};
-
-    croak "No 'command' specified" unless $params->{command};
-
-    my $caller1 = [caller()];
-    my $caller2 = [caller(1)];
-
-    my $env = $params->{env_vars} // {};
-
-    $runner->check_for_fork();
-
-    return run_cmd(env => $env, caller1 => $caller1, caller2 => $caller2, %$params);
 }
 
 use File::Basename;
