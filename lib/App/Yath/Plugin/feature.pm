@@ -7,7 +7,6 @@ our $VERSION = '0.001100';
 
 use parent 'App::Yath::Plugin';
 use App::Yath::Options;
-use Data::Printer;
 
 option_group {prefix => 'feature', category => "Plugin feature"} => sub {
 
@@ -148,7 +147,7 @@ use Test2::Harness::TestFile;
 # Trying to run: 'psql $args $tf->file'
 
 sub munge_files {
-    my ($plugin, $run, $testfiles, $settings) = @_;
+    my ($plugin, $testfiles, $settings) = @_;
 
     for my $tf (@$testfiles) {
        if ($tf->file =~ m/[.]feature$/) {
@@ -162,37 +161,16 @@ sub munge_files {
               push @args, '--steps', $_;
             }
             $tf = Test2::Harness::TestFile->new(
-               file => $tf->file,
-               queue_args => [
-                   command => 'pherkin',
-                   binary => 1,
-                   +test_args => [@args, ($tf->file)],
-                   via => 'App::Yath::Plugin::feature::launch'
-               ]
+                file => $tf->relative,
+                job_class => 'Test2::Harness::Runner::Job::feature',
+                queue_args => [
+                    command => 'pherkin',
+                    binary => 1,
+                    +test_args => [@args, ( '--file', $tf->relative )]
+                ]
            );
        }
     }
-}
-
-use Carp qw/croak confess/;
-use Test2::Harness::Util::IPC qw/run_cmd/;
-
-sub launch {
-    my ($runner,$job) = @_;
-    my $params = $job->spawn_params;
-    #Patch in 'psql' from settings
-    $params->{command}[0] = $job->{task}->{command};
-
-    croak "No 'command' specified" unless $params->{command};
-
-    my $caller1 = [caller()];
-    my $caller2 = [caller(1)];
-
-    my $env = $params->{env_vars} // {};
-
-    $runner->check_for_fork();
-
-    return run_cmd(env => $env, caller1 => $caller1, caller2 => $caller2, %$params);
 }
 
 use File::Basename;
