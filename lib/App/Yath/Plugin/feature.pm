@@ -180,7 +180,9 @@ sub claim_file {
     my ($plugin, $item, $settings) = @_;
     my ($filename, $dirs, $suffix0) = fileparse($item);
     return undef if -d $item;
-    return Test2::Harness::TestFile->new(file => $item);
+    return $suffix0 eq 'feature'
+           ? Test2::Harness::TestFile->new(file => $item)
+           : undef;
 }
 
 1;

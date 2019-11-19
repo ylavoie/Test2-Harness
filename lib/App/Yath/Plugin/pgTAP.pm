@@ -157,7 +157,7 @@ sub claim_file {
     my ($filename, $dirs, $suffix0) = fileparse($item);
     return undef if -d $item;
     my $suffix = $settings->pgtap->suffix;
-    return ! ref($suffix) || $suffix eq $suffix0
+    return $suffix eq $suffix0
         ? Test2::Harness::TestFile->new(file => $item) : undef;
 }
 
