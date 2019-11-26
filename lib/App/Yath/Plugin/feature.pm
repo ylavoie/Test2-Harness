@@ -165,7 +165,7 @@ sub munge_files {
                 job_class => 'Test2::Harness::Runner::Job::feature',
                 queue_args => [
                     command => 'pherkin',
-                    binary => 1,
+                    non_perl => 1,
                     +test_args => [@args, ( '--file', $tf->relative )]
                 ]
            );

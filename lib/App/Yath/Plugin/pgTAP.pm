@@ -138,10 +138,11 @@ sub munge_files {
             }
             $tf = Test2::Harness::TestFile->new(
                  file => $tf->relative,
+                 comment => '--',
                  job_class => 'Test2::Harness::Runner::Job::pgTAP',
                  queue_args => [
                      command => $settings->pgtap->psql,
-                     binary => 1,
+                     non_perl => 1,
                      +test_args => [@args, ( '--file', $tf->relative )]
                  ]
             );
