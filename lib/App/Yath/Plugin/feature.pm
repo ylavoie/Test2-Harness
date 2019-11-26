@@ -161,11 +161,12 @@ sub munge_files {
               push @args, '--steps', $_;
             }
             $tf = Test2::Harness::TestFile->new(
-                file => $tf->relative,
+                file => $tf->file,
                 job_class => 'Test2::Harness::Runner::Job::feature',
+                relative => $tf->relative,
                 queue_args => [
                     command => 'pherkin',
-                    binary => 1,
+                    non_perl => 1,
                     +test_args => [@args, ( '--file', $tf->relative )]
                 ]
            );
