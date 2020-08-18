@@ -13,13 +13,14 @@ option_group {prefix => 'feature', category => "Plugin feature"} => sub {
     option match => (
         #short        => 'm',
         type         => 'b',
-		    description  => ['Only match steps in from features with available ones'],
+        default      => 0,
+        description  => ['Only match steps in from features with available ones'],
     );
 
-   option matching => (
+    option matching => (
         type         => 's',
         default      => 'first',
-		    long_examples => [ ' mode' ],
+        long_examples => [ ' mode' ],
         description  => [ "Step function multiple matches behaviour:
                            `first` (default) selects first match,
                            `relaxed` warns and runs first match or
@@ -38,15 +39,15 @@ option_group {prefix => 'feature', category => "Plugin feature"} => sub {
         #short        => 'o',
         type         => 's',
         default      => 'TermColor',
-		    long_examples => [ ' mode' ],
+        long_examples => [ ' mode' ],
         description  => [ "Output harness. Defaults to 'TermColor'. See 'Outputs'"],
     );
 
-   option theme => (
+    option theme => (
         #short        => 'c',
         type         => 's',
         default      => 'dark',
-		    long_examples => [ ' mode' ],
+        long_examples => [ ' mode' ],
         description  => [ "Theme for 'TermColor'. `light` or `dark` (default)"],
         action        => sub {
             my ($prefix, $field, $raw, $norm, $slot, $settings, $handler) = @_;
@@ -72,7 +73,6 @@ option_group {prefix => 'feature', category => "Plugin feature"} => sub {
     );
 
     option i18n => (
-        #short        => 'g',
         type         => 's',
         long_examples => [ ' LANG' ],
         description  => [ 'List keywords for a particular language.',
@@ -113,9 +113,7 @@ option_group {prefix => 'feature', category => "Plugin feature"} => sub {
 
     option option => (
         type         => 'm',
-
-		    long_examples => [ ' KEY=VALUE' ],
-
+        long_examples => [ ' KEY=VALUE' ],
         description   => ['Support prove options syntax for drop-in compatibility',
                           'where KEY=VALUE is one of:',
                           ' config=path', ' profile=name', ' debug-profile',
