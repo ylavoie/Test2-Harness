@@ -38,7 +38,7 @@ option_group {prefix => 'feature', category => "Plugin feature"} => sub {
     option output => (
         #short        => 'o',
         type         => 's',
-        default      => 'TermColor',
+        default      => 'TestBuilder',
         long_examples => [ ' mode' ],
         description  => [ "Output harness. Defaults to 'TermColor'. See 'Outputs'"],
     );
