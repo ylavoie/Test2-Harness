@@ -24,7 +24,7 @@ sub spawn_params {
         stdout  => $out_fh,
         stderr  => $err_fh,
         chdir   => $self->ch_dir(),
-        set_env => $self->env_vars(),
+        env     => $self->env_vars(),
     };
 }
 
