@@ -8,7 +8,7 @@ use Carp qw/croak/;
 
 use File::Spec;
 use Time::HiRes qw/time/;
-use List::Util qw/first/;
+use List::Util qw/first uniq/;
 
 use Test2::Harness::Runner::Constants;
 
@@ -24,6 +24,7 @@ use Test2::Harness::Util::HashBase(
         <preloader
         <no_poll
         <resources
+        <sequences
     },
 
     qw{
@@ -38,6 +39,7 @@ use Test2::Harness::Util::HashBase(
         <running_categories
         <running_durations
         <running_conflicts
+        <running_sequences
         <running_tasks
 
         <stage_readiness
@@ -142,6 +144,39 @@ sub poll {
 
         $self->$sub($item);
     }
+}
+
+sub _add_sequence {
+    my ($self,$sequence) = @_;
+
+    return if !$sequence;
+
+    for my $sqnc (@{$self->{sequences}}) {
+        if ( $sqnc->{name} eq $sequence->{name} ) {
+            push @{$sqnc->{sequence}}, $sequence->{sequence};
+            @{$sqnc->{sequence}} = uniq( @{$sqnc->{sequence}} );
+            return;
+        }
+    }
+
+    push @{$self->{sequences}}, {
+            name => $sequence->{name},
+            sequence => [$sequence->{sequence}]
+        };
+}
+
+sub _check_sequences {
+    my ($self,$sequence) = @_;
+
+    return 0 if !$sequence;
+
+    for my $sqnc (@{$self->{sequences}}) {
+        if ( $sqnc->{name} eq $sequence->{name} ) {
+            warn !($sqnc->{sequence}[0] eq $sequence->{sequence});
+            return !($sqnc->{sequence}[0] eq $sequence->{sequence});
+        }
+    }
+    return 0;
 }
 
 sub _enqueue {
@@ -322,6 +357,10 @@ sub _start_task {
             if $self->{+RUNNING_CONFLICTS}->{$cfl}++;
     }
 
+    my $sqnc = $task->{sequence};
+    $self->{+RUNNING_SEQUENCES}->{$sqnc->{name}}->{$sqnc->{sequence}}++
+        if $sqnc;
+
     return;
 }
 
@@ -348,6 +387,10 @@ sub _stop_task {
 
     my $cfls = $task->{conflicts} //= [];
     $self->{+RUNNING_CONFLICTS}->{$_}-- for @$cfls;
+
+    my $sqnc = $task->{sequence};
+    $self->{+RUNNING_SEQUENCES}->{$sqnc->{name}}->{$sqnc->{sequence}}--
+        if $sqnc;
 
     return;
 }
@@ -594,6 +637,7 @@ sub _next {
     my $dur_order = $self->_dur_order;
     my $stages    = $self->_stage_order();
     my $resources = $self->{+RESOURCES};
+    my $sequences = $self->{+RUNNING_SEQUENCES};
 
     # Ugly....
     my $search = $pending;
@@ -613,6 +657,7 @@ sub _next {
                     for my $task (@$search) {
                         # If the job has a listed conflict and an existing job is running with that conflict, then pick another job.
                         next if first { $conflicts->{$_} } @{$task->{conflicts}};
+                        next if $self->_check_sequences($task->{sequence});
 
                         my $ok = 1;
                         for my $resource (@$resources) {

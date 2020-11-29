@@ -21,13 +21,14 @@ use Test2::Harness::Util::HashBase qw{
     queue_args
     job_class
     comment
-    _category _stage _duration
+    _category _stage _duration _sequence
 };
 
 sub set_duration { $_[0]->set__duration(lc($_[1])) }
 sub set_category { $_[0]->set__category(lc($_[1])) }
 
 sub set_stage { $_[0]->set__stage($_[1]) }
+sub set_sequence { $_[0]->set__sequence($_[1]) }
 
 sub retry { $_[0]->headers->{retry} }
 sub set_retry {
@@ -166,6 +167,10 @@ sub post_exit_timeout { $_[0]->headers->{timeout}->{postexit} }
 
 sub conflicts_list {
     return $_[0]->headers->{conflicts} || [];    # Assure conflicts is always an array ref.
+}
+
+sub sequence_list {
+    return $_[0]->headers->{sequence} || [];    # Assure conflicts is always an array ref.
 }
 
 sub headers {
@@ -325,6 +330,12 @@ sub _scan {
             # Make sure no more than 1 conflict is ever present.
             @{$headers{conflicts}} = uniq @{$headers{conflicts}};
         }
+        elsif ($dir eq 'sequence') {
+            $headers{sequence} = {
+                name => (defined $args[1] ? $args[0] : 'default') // 'default',
+                sequence => $args[1] // 1
+            };
+        }
         elsif ($dir eq 'timeout') {
             my ($type, $num, $extra) = @args;
             $type = lc($type);
@@ -414,6 +425,7 @@ sub queue_item {
         job_name    => $job_name,
         run_id      => $run_id,
         non_perl    => $non_perl,
+        sequence    => $self->sequence_list,
         stage       => $stage,
         stamp       => time,
         switches    => $self->switches,
@@ -567,6 +579,10 @@ C<undef> will be returned.
 =item $arrayref = $tf->conflicts_list()
 
 Get a list of conflict markers.
+
+=item $arrayref = $tf->sequence_list()
+
+Get a list of sequence markers.
 
 =item $seconds = $tf->event_timeout()
 

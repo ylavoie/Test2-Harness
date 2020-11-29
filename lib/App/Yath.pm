@@ -722,6 +722,14 @@ and is equivalent to HARNESS-RETRY.
 
 Use this to avoid this test being retried regardless of your retry settings.
 
+=head3 HARNESS-SEQUENCE [NAME] [NUMBER]
+
+    Use this to define sequences for some tests, to guarantee run ordering.
+    Yath run tests having the NAME sequence in the order specified. Tests
+    having the same sequence will be run together, subject to run limits.
+    Sequenced test will have to complete before the next sequence NUMBER can
+    proceed.
+
 =head1 MODULE DOCS
 
 This section documents the L<App::Yath> module itself.
