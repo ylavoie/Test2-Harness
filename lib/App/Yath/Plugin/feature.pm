@@ -38,7 +38,7 @@ option_group {prefix => 'feature', category => "Plugin feature"} => sub {
     option output => (
         #short        => 'o',
         type         => 's',
-        default      => 'TestBuilder',
+        default      => 'TAP',
         long_examples => [ ' mode' ],
         description  => [ "Output harness. Defaults to 'TermColor'. See 'Outputs'"],
     );
@@ -185,3 +185,53 @@ sub claim_file {
 }
 
 1;
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+App::Yath::Plugin::feature - Plugin to allow testing Pherkin files.
+
+=head1 DESCRIPTION
+
+This plugin ...
+
+=head1 SYNOPSIS
+
+    $ yath test -pfeature ...
+
+=head1 SOURCE
+
+The source code repository for Test2-Harness can be found at
+F<http://github.com/Test-More/Test2-Harness/>.
+
+=head1 MAINTAINERS
+
+=over 4
+
+=item Yves Lavoie E<lt>ylavoie@cpan.orgE<gt>
+
+=back
+
+=head1 AUTHORS
+
+=over 4
+
+=item Yves Lavoie E<lt>ylavoie@cpan.orgE<gt>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2020 ...
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+See F<http://dev.perl.org/licenses/>
+
+=cut
